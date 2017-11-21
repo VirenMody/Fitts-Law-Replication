@@ -17,24 +17,24 @@ def main():
     xyMax = windowSize / 2 - 1
     xyMin = -1 * xyMax
 
-    numTargets = 20
-    targetWidths = [25, 45]
-    diameters = [200, 300, 400]
+    numTargets = 16
+    targetWidths = [35, 55]
+    diameters = [200, 400, 600]
     degreesBetweenTargets = 360/numTargets
 
     # Create graphical window and center origin
     win = GraphWin("Fitts' Law", windowSize, windowSize)
     win.setBackground("white")
     win.setCoords(xyMin, xyMin, xyMax, xyMax)
+    # Center circle
+    c = Circle(Point(0, 0), 10)
+    c.setFill("blue")
+    c.draw(win)
+    movementData = []
 
     for targetWidth in targetWidths:
 
         for diameter in diameters:
-            # Center circle
-            c = Circle(Point(0, 0), 10)
-            c.setFill("blue")
-            c.draw(win)
-
             radius = diameter / 2
             circleList = []
 
@@ -43,7 +43,6 @@ def main():
                 xCenter = radius*(math.cos(math.radians(degreesBetweenTargets*i)))
                 yCenter = radius*(math.sin(math.radians(degreesBetweenTargets*i)))
 
-                print ('Iteration: ', i,' --> ', xCenter, ', ', yCenter)
                 c = Circle(Point(xCenter, yCenter), targetWidth/2)
                 c.setOutline("black")
                 c.setFill("gray")
@@ -64,7 +63,6 @@ def main():
                     clickedPoint = win.getMouse()
                     if clickedInTarget(clickedPoint, startTarget):
                         startTime = time.time()
-                        print('You got the START!!')
                         startTarget.setFill("gray")
                         endTarget.setFill("red")
                         targetNotClicked = False
@@ -74,15 +72,17 @@ def main():
                     clickedPoint = win.getMouse()
                     if clickedInTarget(clickedPoint, endTarget):
                         endTime = time.time()
-                        print('You got the END!!!')
                         endTarget.setFill("gray")
                         targetNotClicked = False
 
-                print(endTime-startTime)
+                movementTime = endTime-startTime
+                movementData.append([i, i+int(numTargets/2), diameter, targetWidth, movementTime])
 
             # Clear the window, undraw circle of all circles
             for circle in circleList:
                 circle.undraw()
+
+        print(movementData)
 
     #exit
     win.close()
