@@ -18,9 +18,8 @@ def main():
     xyMin = -1 * xyMax
 
     numTargets = 20
-    targetWidth = 45
-    diameter = 200
-    radius = diameter/2
+    targetWidths = [25, 45]
+    diameters = [200, 300, 400]
     degreesBetweenTargets = 360/numTargets
 
     # Create graphical window and center origin
@@ -28,48 +27,62 @@ def main():
     win.setBackground("white")
     win.setCoords(xyMin, xyMin, xyMax, xyMax)
 
-    # Center circle
-    c = Circle(Point(0, 0), 10)
-    c.setFill("blue")
-    c.draw(win)
+    for targetWidth in targetWidths:
 
+        for diameter in diameters:
+            # Center circle
+            c = Circle(Point(0, 0), 10)
+            c.setFill("blue")
+            c.draw(win)
 
-    circleList = []
+            radius = diameter / 2
+            circleList = []
 
-    # Populate circleList with circles of targetWidth and diameter/amplitude
-    for i in range(0, numTargets):
-        xCenter = radius*(math.cos(math.radians(degreesBetweenTargets*i)))
-        yCenter = radius*(math.sin(math.radians(degreesBetweenTargets*i)))
+            # Populate circleList with circles of targetWidth and diameter/amplitude
+            for i in range(0, numTargets):
+                xCenter = radius*(math.cos(math.radians(degreesBetweenTargets*i)))
+                yCenter = radius*(math.sin(math.radians(degreesBetweenTargets*i)))
 
-        print ('Iteration: ', i,' --> ', xCenter, ', ', yCenter)
-        c = Circle(Point(xCenter, yCenter), targetWidth/2)
-        c.setOutline("black")
-        c.setFill("gray")
-        circleList.append(c)
+                print ('Iteration: ', i,' --> ', xCenter, ', ', yCenter)
+                c = Circle(Point(xCenter, yCenter), targetWidth/2)
+                c.setOutline("black")
+                c.setFill("gray")
+                circleList.append(c)
 
-    # Draw circle of circles
-    for circle in circleList:
-        circle.draw(win)
+            # Draw circle of circles
+            for circle in circleList:
+                circle.draw(win)
 
-    for i in range(0, int(numTargets/2)):
-        startTarget = circleList[i]
-        endTarget = circleList[i+int(numTargets/2)]
-        startTarget.setFill("red")
+            # Loop through all numTarget/2 pairs
+            for i in range(0, int(numTargets/2)):
+                startTarget = circleList[i]
+                endTarget = circleList[i+int(numTargets/2)]
+                startTarget.setFill("red")
 
-        clickedPoint = win.getMouse()
-        if clickedInTarget(clickedPoint, startTarget):
-            startTime = time.time()
-            print('You got the START!!')
-            startTarget.setFill("gray")
-            endTarget.setFill("red")
+                targetNotClicked = True
+                while targetNotClicked:
+                    clickedPoint = win.getMouse()
+                    if clickedInTarget(clickedPoint, startTarget):
+                        startTime = time.time()
+                        print('You got the START!!')
+                        startTarget.setFill("gray")
+                        endTarget.setFill("red")
+                        targetNotClicked = False
 
-        clickedPoint = win.getMouse()
-        if clickedInTarget(clickedPoint, endTarget):
-            endTime = time.time()
-            print('You got the END!!!')
-            endTarget.setFill("gray")
+                targetNotClicked = True
+                while targetNotClicked:
+                    clickedPoint = win.getMouse()
+                    if clickedInTarget(clickedPoint, endTarget):
+                        endTime = time.time()
+                        print('You got the END!!!')
+                        endTarget.setFill("gray")
+                        targetNotClicked = False
 
-        print(endTime-startTime)
+                print(endTime-startTime)
+
+            # Clear the window, undraw circle of all circles
+            for circle in circleList:
+                circle.undraw()
 
     #exit
     win.close()
