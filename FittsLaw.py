@@ -1,7 +1,11 @@
 from graphics import *
 from graphicsexamples import *
+from random import shuffle
+import pandas as pd
+import itertools
 import math
 import time
+#import xlwt
 
 # checks where use clicked in target
 def clickedInTarget(clickedPoint, target):
@@ -13,32 +17,52 @@ def clickedInTarget(clickedPoint, target):
     return distance <= target.getRadius()
 
 def main():
+    userData = pd.DataFrame(columns=['User', 'Case', 'Width', 'Amplitude', 'ID', 'Time'])
     windowSize = 700
     xyMax = windowSize / 2 - 1
     xyMin = -1 * xyMax
 
-    numTargets = 16
+    numTargets = 4
     targetWidths = [35, 55]
-    diameters = [200, 400, 600]
+    amplitudes = [200, 400, 600]
+    parameters = list(itertools.product(targetWidths, amplitudes))
     degreesBetweenTargets = 360/numTargets
 
     # Create graphical window and center origin
     win = GraphWin("Fitts' Law", windowSize, windowSize)
     win.setBackground("white")
     win.setCoords(xyMin, xyMin, xyMax, xyMax)
+
+    # Exit Button
+
+
     # Center circle
     c = Circle(Point(0, 0), 10)
     c.setFill("blue")
     c.draw(win)
-    movementData = []
 
-    for targetWidth in targetWidths:
+    userNumber = 0
+    collectingData = True
+    while collectingData:
 
-        for diameter in diameters:
-            radius = diameter / 2
+        userNumber += 1
+        caseNumber = 0
+        shuffle(parameters)
+
+        for targetWidth, amplitude in parameters:
+
+            caseNumber += 1
+            radius = amplitude / 2
             circleList = []
 
-            # Populate circleList with circles of targetWidth and diameter/amplitude
+            paramString = "User Number: " + str(userNumber) + "\n" \
+                          "Case Number: " + str(caseNumber) + "\n" \
+                          "Target Width: " + str(targetWidth) + " pixels\n" \
+                          "Diameter: " + str(amplitude) + " pixels"
+            displayParameters = Text(Point(-249, -249), paramString)
+            displayParameters.draw(win)
+
+            # Populate circleList with circles of targetWidth and amplitude/diameter
             for i in range(0, numTargets):
                 xCenter = radius*(math.cos(math.radians(degreesBetweenTargets*i)))
                 yCenter = radius*(math.sin(math.radians(degreesBetweenTargets*i)))
@@ -76,13 +100,23 @@ def main():
                         targetNotClicked = False
 
                 movementTime = endTime-startTime
-                movementData.append([i, i+int(numTargets/2), diameter, targetWidth, movementTime])
+
+                id = math.log2(amplitude/targetWidth + 1)
+                data = [{'User': userNumber,
+                           'Case': caseNumber,
+                           'Width': targetWidth,
+                           'Amplitude': amplitude,
+                           'ID': id,
+                           'Time': movementTime}]
+                userData = userData.append(data)
 
             # Clear the window, undraw circle of all circles
             for circle in circleList:
                 circle.undraw()
+            displayParameters.undraw()
 
-        print(movementData)
+        print(userData)
+        collectingData = False
 
     #exit
     win.close()
