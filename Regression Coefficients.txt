@@ -1,0 +1,7 @@
+Coefficients for MT over ID:
+Slope: 0.19098503
+Intercept: 0.196570520709
+
+Coefficients for TP over ID:
+Slope:  0.34882229
+Intercept: 2.96127940425

@@ -22,14 +22,14 @@ def clickedInTarget(clickedPoint, target):
     return distance <= target.getRadius()
 
 def main():
-    userData = pd.DataFrame(columns=['User', 'Case', 'Target Width', 'Amplitude', 'ID', 'Movement Time', 'TP'])
-    windowSize = 700
+    userData = pd.DataFrame(columns=['User', 'Case', 'Target Width', 'Amplitude', 'ID', 'Movement Time', 'Throughput'])
+    windowSize = 800
     xyMax = windowSize / 2 - 1
     xyMin = -1 * xyMax
 
-    numTargets = 2
-    targetWidths = [35, 55]
-    amplitudes = [200, 400, 600]
+    numTargets = 16
+    targetWidths = [55]
+    amplitudes = [400]
     parameters = list(itertools.product(targetWidths, amplitudes))
     degreesBetweenTargets = 360/numTargets
 
@@ -40,7 +40,6 @@ def main():
 
     # Exit Button
 
-
     # Center circle
     # c = Circle(Point(0, 0), 10)
     # c.setFill("blue")
@@ -48,7 +47,7 @@ def main():
 
     userNumber = 0
 
-    for x in range(0, 1):
+    for x in range(0, 2):
         userNumber += 1
         caseNumber = 0
         shuffle(parameters)
@@ -63,7 +62,7 @@ def main():
                           "Case Number: " + str(caseNumber) + "\n" \
                           "Target Width: " + str(targetWidth) + " pixels\n" \
                           "Diameter: " + str(amplitude) + " pixels"
-            displayParameters = Text(Point(-249, -249), paramString)
+            displayParameters = Text(Point(-300, -300), paramString)
             displayParameters.draw(win)
 
             # Populate circleList with circles of targetWidth and amplitude/diameter
@@ -112,7 +111,7 @@ def main():
                            'Amplitude': amplitude,
                            'ID': id,
                            'Movement Time': movementTime,
-                           'TP': id/movementTime}]
+                           'Throughput': id/movementTime}]
                 userData = userData.append(data)
 
             # Clear the window, undraw circle of all circles
@@ -123,28 +122,34 @@ def main():
 
     print(userData)
     sortedUserData = userData.sort_values(by='ID')
-    print(sortedUserData)
+    userData.to_csv('UserData.csv')
+
+
+    averagedData = sortedUserData.groupby(['ID'])['Movement Time', 'Throughput'].mean().reset_index()
+    print(averagedData)
+    averagedData.to_csv('AveragedData.csv')
 
     # data analysis for MT over ID *********************
-    xID = userData['ID'].values[:, np.newaxis]
-    yMT = userData['Movement Time'].values
+    xID = averagedData['ID'].values[:, np.newaxis]
+    yMT = averagedData['Movement Time'].values
 
-    xMin = math.floor(userData['ID'].min())
-    xMax = math.ceil(userData['ID'].max())
-    yMin = math.floor(userData['Movement Time'].min())
-    yMax = math.ceil(userData['Movement Time'].max())
+    xMin = math.floor(averagedData['ID'].min())
+    xMax = math.ceil(averagedData['ID'].max())
+    yMin = math.floor(averagedData['Movement Time'].min())
+    yMax = math.ceil(averagedData['Movement Time'].max())
 
-
-    linRegModel = linear_model.LinearRegression()
-    linRegModel.fit(xID, yMT)
+    linRegModelMT = linear_model.LinearRegression()
+    linRegModelMT.fit(xID, yMT)
     # The coefficients
-    firstSlope = linRegModel.coef_
-    firstIntercept = linRegModel.intercept_
+    firstSlope = linRegModelMT.coef_
+    firstIntercept = linRegModelMT.intercept_
     domainVal = np.arange(0, xMax+1)
     line = firstSlope*domainVal + firstIntercept
-    print('Coefficients: \n', linRegModel.coef_)
-    print('Intercept: \n', linRegModel.intercept_)
-    plt.figure(0)
+    print('Coefficients for MT over ID:')
+    print('Slope: \n', linRegModelMT.coef_)
+    print('Intercept: \n', linRegModelMT.intercept_)
+
+    plt.figure(1)
     pylab.title('Linear Regression of Movement Time (MT) over Index of Difficulty (IT)')
     plt.ylabel('Movement Time (seconds)')
     plt.xlabel('Index of Difficulty (bits)')
@@ -154,45 +159,43 @@ def main():
     plt.scatter(xID, yMT, color='black')
     plt.plot(domainVal, line)
     ax = plt.gca()
-    # ax.set_axis_bgcolor((0.898, 0.898, 0.898))
-    plt.show()
+    ax.set_axis_bgcolor((0.898, 0.898, 0.898))
 
     # data analysis for TP over ID *********************
-    # xID = userData['ID'].values[:, np.newaxis]
-    yTP = userData['TP'].values
+    xID = averagedData['ID'].values[:, np.newaxis]
+    yTP = averagedData['Throughput'].values
 
-    xMin = math.floor(userData['ID'].min())
-    xMax = math.ceil(userData['ID'].max())
-    yMin = math.floor(userData['TP'].min())
-    yMax = math.ceil(userData['TP'].max())
+    xMin = math.floor(averagedData['ID'].min())
+    xMax = math.ceil(averagedData['ID'].max())
+    yMin = math.floor(averagedData['Throughput'].min())
+    yMax = math.ceil(averagedData['Throughput'].max())
 
-    linRegModel = linear_model.LinearRegression()
-    linRegModel.fit(xID, yTP)
+    linRegModelTP = linear_model.LinearRegression()
+    linRegModelTP.fit(xID, yTP)
     # The coefficients
-    secondSlope = linRegModel.coef_
-    secondIntercept = linRegModel.intercept_
+    secondSlope = linRegModelTP.coef_
+    secondIntercept = linRegModelTP.intercept_
     domainVal = np.arange(0, xMax+1)
     line2 = secondSlope*domainVal + secondIntercept
-    print('Coefficients: \n', linRegModel.coef_)
-    print('Intercept: \n', linRegModel.intercept_)
-    plt.figure(1)
+    print('Coefficients for TP over ID:')
+    print('Slope: \n', linRegModelTP.coef_)
+    print('Intercept: \n', linRegModelTP.intercept_)
+
+    plt.figure(2)
     pylab.title('Linear Regression of Throughput (TP) over Index of Difficulty (IT)')
     plt.ylabel('Throughput (bits per second)')
     plt.xlabel('Index of Difficulty (bits)')
     plt.axis([0, xMax, 0, yMax])
     plt.xticks(np.arange(0, xMax+0.5, 0.5))
     plt.yticks(np.arange(0, yMax+0.25, 0.25))
-    plt.scatter(xID, yMT, color='black')
+    plt.scatter(xID, yTP, color='black')
     plt.plot(domainVal, line2)
     ax = plt.gca()
     ax.set_axis_bgcolor((0.898, 0.898, 0.898))
-    plt.show()
-    win.getMouse()
 
+    plt.show()
 
     #exit
-    win.getMouse()
     win.close()
-
 
 main()
