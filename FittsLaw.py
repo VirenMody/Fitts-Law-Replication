@@ -5,7 +5,12 @@ import pandas as pd
 import itertools
 import math
 import time
-#import xlwt
+
+import matplotlib.pyplot as plt
+import numpy as np
+from sklearn import linear_model
+from matplotlib import pylab
+
 
 # checks where use clicked in target
 def clickedInTarget(clickedPoint, target):
@@ -17,12 +22,12 @@ def clickedInTarget(clickedPoint, target):
     return distance <= target.getRadius()
 
 def main():
-    userData = pd.DataFrame(columns=['User', 'Case', 'Width', 'Amplitude', 'ID', 'Time'])
+    userData = pd.DataFrame(columns=['User', 'Case', 'Target Width', 'Amplitude', 'ID', 'Movement Time', 'TP'])
     windowSize = 700
     xyMax = windowSize / 2 - 1
     xyMin = -1 * xyMax
 
-    numTargets = 4
+    numTargets = 2
     targetWidths = [35, 55]
     amplitudes = [200, 400, 600]
     parameters = list(itertools.product(targetWidths, amplitudes))
@@ -37,14 +42,13 @@ def main():
 
 
     # Center circle
-    c = Circle(Point(0, 0), 10)
-    c.setFill("blue")
-    c.draw(win)
+    # c = Circle(Point(0, 0), 10)
+    # c.setFill("blue")
+    # c.draw(win)
 
     userNumber = 0
-    collectingData = True
-    while collectingData:
 
+    for x in range(0, 1):
         userNumber += 1
         caseNumber = 0
         shuffle(parameters)
@@ -104,10 +108,11 @@ def main():
                 id = math.log2(amplitude/targetWidth + 1)
                 data = [{'User': userNumber,
                            'Case': caseNumber,
-                           'Width': targetWidth,
+                           'Target Width': targetWidth,
                            'Amplitude': amplitude,
                            'ID': id,
-                           'Time': movementTime}]
+                           'Movement Time': movementTime,
+                           'TP': id/movementTime}]
                 userData = userData.append(data)
 
             # Clear the window, undraw circle of all circles
@@ -115,10 +120,78 @@ def main():
                 circle.undraw()
             displayParameters.undraw()
 
-        print(userData)
-        collectingData = False
+
+    print(userData)
+    sortedUserData = userData.sort_values(by='ID')
+    print(sortedUserData)
+
+    # data analysis for MT over ID *********************
+    xID = userData['ID'].values[:, np.newaxis]
+    yMT = userData['Movement Time'].values
+
+    xMin = math.floor(userData['ID'].min())
+    xMax = math.ceil(userData['ID'].max())
+    yMin = math.floor(userData['Movement Time'].min())
+    yMax = math.ceil(userData['Movement Time'].max())
+
+
+    linRegModel = linear_model.LinearRegression()
+    linRegModel.fit(xID, yMT)
+    # The coefficients
+    firstSlope = linRegModel.coef_
+    firstIntercept = linRegModel.intercept_
+    domainVal = np.arange(0, xMax+1)
+    line = firstSlope*domainVal + firstIntercept
+    print('Coefficients: \n', linRegModel.coef_)
+    print('Intercept: \n', linRegModel.intercept_)
+    plt.figure(0)
+    pylab.title('Linear Regression of Movement Time (MT) over Index of Difficulty (IT)')
+    plt.ylabel('Movement Time (seconds)')
+    plt.xlabel('Index of Difficulty (bits)')
+    plt.axis([0, xMax, 0, yMax])
+    plt.xticks(np.arange(0, xMax+0.5, 0.5))
+    plt.yticks(np.arange(0, yMax+0.25, 0.25))
+    plt.scatter(xID, yMT, color='black')
+    plt.plot(domainVal, line)
+    ax = plt.gca()
+    # ax.set_axis_bgcolor((0.898, 0.898, 0.898))
+    plt.show()
+
+    # data analysis for TP over ID *********************
+    # xID = userData['ID'].values[:, np.newaxis]
+    yTP = userData['TP'].values
+
+    xMin = math.floor(userData['ID'].min())
+    xMax = math.ceil(userData['ID'].max())
+    yMin = math.floor(userData['TP'].min())
+    yMax = math.ceil(userData['TP'].max())
+
+    linRegModel = linear_model.LinearRegression()
+    linRegModel.fit(xID, yTP)
+    # The coefficients
+    secondSlope = linRegModel.coef_
+    secondIntercept = linRegModel.intercept_
+    domainVal = np.arange(0, xMax+1)
+    line2 = secondSlope*domainVal + secondIntercept
+    print('Coefficients: \n', linRegModel.coef_)
+    print('Intercept: \n', linRegModel.intercept_)
+    plt.figure(1)
+    pylab.title('Linear Regression of Throughput (TP) over Index of Difficulty (IT)')
+    plt.ylabel('Throughput (bits per second)')
+    plt.xlabel('Index of Difficulty (bits)')
+    plt.axis([0, xMax, 0, yMax])
+    plt.xticks(np.arange(0, xMax+0.5, 0.5))
+    plt.yticks(np.arange(0, yMax+0.25, 0.25))
+    plt.scatter(xID, yMT, color='black')
+    plt.plot(domainVal, line2)
+    ax = plt.gca()
+    ax.set_axis_bgcolor((0.898, 0.898, 0.898))
+    plt.show()
+    win.getMouse()
+
 
     #exit
+    win.getMouse()
     win.close()
 
 
